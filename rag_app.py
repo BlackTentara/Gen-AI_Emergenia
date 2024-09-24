@@ -17,6 +17,7 @@ from llama_index.core.response_synthesizers import get_response_synthesizer
 from llama_index.core.node_parser import HierarchicalNodeParser, get_leaf_nodes, get_root_nodes
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.chat_engine import CondensePlusContextChatEngine
+from qdrant_client import QdrantClient
 
 
 
@@ -63,7 +64,13 @@ class Chatbot:
             documents = reader.load_data()
 
         if vector_store is None:
-            index = VectorStoreIndex.from_documents(documents)
+            client = QdrantClient(
+                url=st.secrets["qdrant"]["connection_url"], 
+                api_key=st.secrets["qdrant"]["api_key"],
+            )
+            vector_store = QdrantVectorStore(client=client, collection_name="Documents")
+            storage_context = StorageContext.from_defaults(vector_store=vector_store)
+            index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
         return index
 
     def set_chat_history(self, messages):
