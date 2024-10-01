@@ -163,4 +163,4 @@ cython_debug/
 
 # Other
 fastembed_cache
-src/.streamlit
+*.streamlit/secrets.toml
