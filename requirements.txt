@@ -4,7 +4,6 @@ llama-index-llms-ollama
 llama-index-vector-stores-qdrant
 llama-index-readers-json
 
-unstructured[all-docs]
 qdrant_client
 fastembed
 streamlit==1.32.2

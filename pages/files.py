@@ -5,7 +5,6 @@ from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, Settings
 from llama_index.readers.json import JSONReader
-from llama_index.readers.file import UnstructuredReader
 from llama_index.embeddings.fastembed import FastEmbedEmbedding
 
 
@@ -61,7 +60,6 @@ def indexing_data(path, file_name):
     with st.spinner(text="Loading and indexing – hang tight! This should take a few minutes, don't turn off or switch pages!"):
         # Read & load document
         reader = SimpleDirectoryReader(input_files=[file_path], file_extractor={
-            ".pdf":UnstructuredReader(),
             ".json":JSONReader(),
         })
         documents = reader.load_data()
