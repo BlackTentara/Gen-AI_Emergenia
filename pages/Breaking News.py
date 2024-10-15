@@ -213,9 +213,18 @@ from datetime import datetime
 
 async def search_informasi_kejadian_darurat(tanggal: str = None) -> str:
     """Searches the Keadaan Darurat database for matching keadaan darurat entries."""
-    
-    
-    r = requests.get("https://layanan112.kominfo.go.id/get/emergency_lists/{tanggal}")
+
+    if not tanggal:
+        tanggal = datetime.now().strftime('%Y-%m-%d')
+    else:
+        # Validasi format tanggal input dari pengguna (harus YYYY-MM-DD)
+        try:
+            # Mencoba mengonversi input string ke datetime untuk memeriksa validitas formatnya
+            datetime.strptime(tanggal, '%Y-%m-%d')
+        except ValueError:
+            return "Error: Format tanggal tidak valid. Harus dalam format YYYY-MM-DD."
+        
+    r = requests.get("https://layanan112.kominfo.go.id/get/emergency_lists/{today}")
     
     data = r.json()
     output = f"# Data Search Results for {tanggal}\n"
