@@ -197,13 +197,13 @@ Settings.llm = Ollama(model="llama3.1:8b-instruct-q4_0", base_url="http://127.0.
 Settings.embed_model = OllamaEmbedding(base_url="http://127.0.0.1:11434", model_name="mxbai-embed-large:latest")
 
 # Main Program
-st.title("RAG Test")
+st.title("Breaking News")
 
 # Initialize chat history if empty
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant",
-         "content": "Halo! Mau tahu apa tentang kejadian darurat hari ini?"}
+         "content": "Halo! Informasi apa yang ingin anda ketahui?"}
     ]
 
 # Declare Tools
@@ -223,8 +223,8 @@ async def search_informasi_kejadian_darurat(tanggal: str = None) -> str:
             datetime.strptime(tanggal, '%Y-%m-%d')
         except ValueError:
             return "Error: Format tanggal tidak valid. Harus dalam format YYYY-MM-DD."
-        
-    r = requests.get("https://layanan112.kominfo.go.id/get/emergency_lists/{today}")
+            
+    r = requests.get(f"https://layanan112.kominfo.go.id/get/emergency_lists/{tanggal}")
     
     data = r.json()
     output = f"# Data Search Results for {tanggal}\n"
