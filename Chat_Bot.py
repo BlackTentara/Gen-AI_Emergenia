@@ -18,8 +18,16 @@ from llama_index.core.node_parser import HierarchicalNodeParser, get_leaf_nodes,
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core.chat_engine import CondensePlusContextChatEngine
 from qdrant_client import QdrantClient
+from llama_index.core.tools import BaseTool, FunctionTool
 
+import sys
 
+import logging
+import requests
+from typing import Optional
+
+import nest_asyncio
+nest_asyncio.apply()
 
 # CONTEXT_PROMPT = """You are an expert system with knowledge of interview questions.
 # These are documents that may be relevant to user question:\n\n
@@ -51,7 +59,9 @@ class Chatbot:
                                 You are a multi-lingual expert system who has knowledge, based on 
                                 real-time data. You will always try to be helpful and try to help them 
                                 answering their question. If you don't know the answer, say that you DON'T
-                                KNOW.
+                                KNOW. Your main purpose is to answer questions about layanan keadaan darurat. 
+                                Give full explanations according to ur knowledge, pdf, and web scrapping information
+                                provided. Dont ever say where you got the information from though such as the pdf, web, or anything, just act as if u know.
                                 """
 
         return Settings
@@ -65,8 +75,8 @@ class Chatbot:
 
         if vector_store is None:
             client = QdrantClient(
-                url=st.secrets["qdrant"]["connection_url"], 
-                api_key=st.secrets["qdrant"]["api_key"],
+                url="https://44efc1d5-e7fd-44bb-826e-7bdd3fe4745b.europe-west3-0.gcp.cloud.qdrant.io:6333", 
+                api_key="DJ-djE9fDppvXGzZR_VuTWxW4AgYn6iYTgwVY4hBODPoiRg1UvlLGg" ,
             )
             vector_store = QdrantVectorStore(client=client, collection_name="Documents")
             storage_context = StorageContext.from_defaults(vector_store=vector_store)
@@ -94,17 +104,68 @@ class Chatbot:
 
 
 # Main Program
-st.title("Simple RAG Chatbot with Streamlit")
+st.title("Layanan Keadaan Darurat")
 chatbot = Chatbot()
 
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant",
-         "content": "Hello there 👋!\n\n Good to see you, how may I help you today? Feel free to ask me 😁"}
+         "content": "Layanan Keadaan Darurat siap melayani segala pertanyaan!😁"}
     ]
 
 print(chatbot.chat_store.store)
+
+# function tools
+async def search_layanan_darurat(keyword: str, location_key: Optional[str]) -> list[str]:
+    """Searches the Studi Independen database for matching studi independen entries. Keyword should be one or two relevant words. location_key should be 'Surabaya' or 'Online' or empty."""
+    r = requests.get("https://api.kampusmerdeka.kemdikbud.go.id/studi/browse/activity", {
+        "offset": 0,
+        "limit": 50,
+        "location_key": location_key,
+        "keyword": keyword,
+        "sector_id": None,
+        "sort_by": "published_time",
+        "order": "desc"
+    })
+
+    data = r.json()
+    output = f"# Course Search Results for '{keyword}'"
+
+    for d in data["data"]:
+        output += f"""
+Activity Name: {d['name']}
+Type: {d['activity_type']}
+Location: {d['location']}
+Mitra: {d['mitra_name']}
+Activity Id: {d['id']}
+
+"""
+    return output
+
+
+async def get_layanan_darurat_detail(activity_id: str) -> str:
+    """Provides detailed information regarding the studi independen activity."""
+    r = requests.get(f"https://api.kampusmerdeka.kemdikbud.go.id/studi/browse/activity/{activity_id}")
+
+    data = r.json()["data"]
+    return f"""
+Activity Name: {data["name"]}
+Activity Type: {data["activity_type"]}
+Location: {data["location"]}
+
+Description:
+{data["description"]}
+
+Requirements:
+{data["requirement"]}
+    """
+
+
+search_layanan_darurat_tool = FunctionTool.from_defaults(async_fn=search_layanan_darurat)
+get_layanan_darurat_activity_tool = FunctionTool.from_defaults(async_fn=get_layanan_darurat_detail)
+
+tools = [search_layanan_darurat_tool, get_layanan_darurat_activity_tool]
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:

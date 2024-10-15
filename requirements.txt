@@ -3,7 +3,14 @@ llama-index-embeddings-fastembed
 llama-index-llms-ollama
 llama-index-vector-stores-qdrant
 llama-index-readers-json
+llama-index-retrievers-bm25
+llama-index-embeddings-ollama
+
 
 qdrant_client
 fastembed
 streamlit==1.32.2
+
+playwright
+scraphegraphai = 0.9.0b7
+nest_asyncio
