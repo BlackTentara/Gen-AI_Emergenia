@@ -1,11 +1,14 @@
 import streamlit as st
 from llama_index.llms.ollama import Ollama
+from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.embeddings.ollama import OllamaEmbedding
 from pathlib import Path
 import qdrant_client
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, Settings, PromptTemplate
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.vector_stores.qdrant import QdrantVectorStore
-from llama_index.embeddings.fastembed import FastEmbedEmbedding
+from llama_index.core.base.embeddings.base import BaseEmbedding  # Contoh impor, sesuaikan dengan pustaka Anda
+
 
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store import SimpleChatStore
@@ -20,13 +23,23 @@ from llama_index.core.chat_engine import CondensePlusContextChatEngine
 from qdrant_client import QdrantClient
 from llama_index.core.tools import BaseTool, FunctionTool
 
+
+import sys
+import logging
+import requests
+from typing import Optional
+import nest_asyncio
+
+
+from mixedbread_ai.client import MixedbreadAI
+from sentence_transformers.util import cos_sim
+
 import sys
 
 import logging
 import requests
 from typing import Optional
 
-import nest_asyncio
 nest_asyncio.apply()
 
 # CONTEXT_PROMPT = """You are an expert system with knowledge of interview questions.
@@ -39,7 +52,7 @@ nest_asyncio.apply()
 # """
 
 class Chatbot:
-    def __init__(self, llm="llama3.1:latest", embedding_model="intfloat/multilingual-e5-large", vector_store=None):
+    def __init__(self, llm="llama3.1:latest", embedding_model="mxbai-embed-large:latest", vector_store=None):
         self.Settings = self.set_setting(llm, embedding_model)
 
         # Indexing
@@ -53,8 +66,8 @@ class Chatbot:
 
     def set_setting(_arg, llm, embedding_model):
         Settings.llm = Ollama(model=llm, base_url="http://127.0.0.1:11434")
-        Settings.embed_model = FastEmbedEmbedding(
-            model_name=embedding_model, cache_dir="./fastembed_cache")
+        Settings.embed_model = OllamaEmbedding(base_url="http://127.0.0.1:11434",
+            model_name=embedding_model)
         Settings.system_prompt = """
                                 You are a multi-lingual expert system who has knowledge, based on 
                                 real-time data. You will always try to be helpful and try to help them 
@@ -116,56 +129,7 @@ if "messages" not in st.session_state:
 
 print(chatbot.chat_store.store)
 
-# function tools
-async def search_layanan_darurat(keyword: str, location_key: Optional[str]) -> list[str]:
-    """Searches the Studi Independen database for matching studi independen entries. Keyword should be one or two relevant words. location_key should be 'Surabaya' or 'Online' or empty."""
-    r = requests.get("https://api.kampusmerdeka.kemdikbud.go.id/studi/browse/activity", {
-        "offset": 0,
-        "limit": 50,
-        "location_key": location_key,
-        "keyword": keyword,
-        "sector_id": None,
-        "sort_by": "published_time",
-        "order": "desc"
-    })
 
-    data = r.json()
-    output = f"# Course Search Results for '{keyword}'"
-
-    for d in data["data"]:
-        output += f"""
-Activity Name: {d['name']}
-Type: {d['activity_type']}
-Location: {d['location']}
-Mitra: {d['mitra_name']}
-Activity Id: {d['id']}
-
-"""
-    return output
-
-
-async def get_layanan_darurat_detail(activity_id: str) -> str:
-    """Provides detailed information regarding the studi independen activity."""
-    r = requests.get(f"https://api.kampusmerdeka.kemdikbud.go.id/studi/browse/activity/{activity_id}")
-
-    data = r.json()["data"]
-    return f"""
-Activity Name: {data["name"]}
-Activity Type: {data["activity_type"]}
-Location: {data["location"]}
-
-Description:
-{data["description"]}
-
-Requirements:
-{data["requirement"]}
-    """
-
-
-search_layanan_darurat_tool = FunctionTool.from_defaults(async_fn=search_layanan_darurat)
-get_layanan_darurat_activity_tool = FunctionTool.from_defaults(async_fn=get_layanan_darurat_detail)
-
-tools = [search_layanan_darurat_tool, get_layanan_darurat_activity_tool]
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
@@ -197,3 +161,5 @@ if prompt := st.chat_input("What is up?"):
     # Add user message to chat history
     st.session_state.messages.append(
         {"role": "assistant", "content": response.response})
+    
+# emb_60296f7fa631ac1c42a4dd98be85e3f1e473faeb90fff0e3
