@@ -12,5 +12,9 @@ fastembed
 streamlit==1.32.2
 
 playwright
-scraphegraphai = 0.9.0b7
+scraphegraphai == 0.9.0b7
 nest_asyncio
+
+git+https://github.com/openai/swarm.git
+streamlit 
+duckduckgo-search

@@ -30,12 +30,9 @@ import requests
 from typing import Optional
 import nest_asyncio
 
-
-from mixedbread_ai.client import MixedbreadAI
 from sentence_transformers.util import cos_sim
 
 import sys
-
 import logging
 import requests
 from typing import Optional
@@ -52,7 +49,7 @@ nest_asyncio.apply()
 # """
 
 class Chatbot:
-    def __init__(self, llm="llama3.1:latest", embedding_model="mxbai-embed-large:latest", vector_store=None):
+    def __init__(self, llm="llama3.1:latest", embedding_model="nomic_embed-text", vector_store=None):
         self.Settings = self.set_setting(llm, embedding_model)
 
         # Indexing
@@ -88,9 +85,10 @@ class Chatbot:
 
         if vector_store is None:
             client = QdrantClient(
-                url="https://44efc1d5-e7fd-44bb-826e-7bdd3fe4745b.europe-west3-0.gcp.cloud.qdrant.io:6333", 
-                api_key="DJ-djE9fDppvXGzZR_VuTWxW4AgYn6iYTgwVY4hBODPoiRg1UvlLGg" ,
+                url="https://a43128ed-17c5-4124-a608-7e423a562ab2.us-east4-0.gcp.cloud.qdrant.io:6333", 
+                api_key="iZ05nY3V2qT2R-c4PnKVye5BNAH-EPKGWoZuZWu5isNAEcWjaiGJFA" ,
             )
+            
             vector_store = QdrantVectorStore(client=client, collection_name="Documents")
             storage_context = StorageContext.from_defaults(vector_store=vector_store)
             index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
